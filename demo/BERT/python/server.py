@@ -48,46 +48,33 @@ def run_server(input_queue, output_queue):
 
               </head>
               <body>
-              <div style="width:800px; margin:0 auto;">
+              <h1 style="text-align:center;"><font color="green">Jarvis QA - WIP</font></h1>
+              <div style="width=800 margin:0 auto;" align="center">
 
               <p>
-    <textarea rows="30" cols="80" id="para">
+    <textarea rows="30" cols="100" id="para">
     %s
    </textarea>
    </p>
    <p>
-    Question:<input type="text" id="question" value="What is the annual limit of percentage you defer" size=50>
-    </p>
-    <p>
-    <button type="button" onclick="clicked()">Send</button>
-    </p>
-    <p>
-    Answer:<input type="text" id="answer" size=50 disabled=true>
-    </p>
-    <p>
     Example questions:
     </p>
     <p>
     <select onchange="selected()" id="examples">
-    <option value="what is the name and address of my employer?">what is the name and address of my employer?</option>
 
-    <option value="what is my employer's federal tax identification number?">what is my employer's federal tax identification number?</option>
-
-    <option value="what is the maximum amount of compensation that may be taken into account?">what is the maximum amount of compensation that may be taken into account?</option>
-
-    <option value="what percentage of eligible compensation can be deferred?">what percentage of eligible compensation can be deferred?</option>
-
-    <option value="how much will deferral rates will increase each year?">how much will deferral rates will increase each year?</option>
-
-    <option value="what is the limit on contributions by federal law?">what is the limit on contributions by federal law?</option>
-
-    <option value="what percentage of my rollover contributions are vested?">what percentage of my rollover contributions are vested?</option>
-
-    <option value="what is the minimum hardship withdrawal?">what is the minimum hardship withdrawal?</option>
-
-    <option value="what are the plans exclusions?">what are the plans exclusions?</option>
-    <option value="when is the latest change of the plan?">when is the latest change of the plan?</option>
+    <option value="Who are you?">"Who are you?"</option>
+    <option value="What can you do?">"What can you do?"</option>
     </select>
+    </p>
+
+   <p>
+    Question:<input type="text" id="question" value="Did Mozart and Beethoven meet?" size=50>
+    </p>
+    <p>
+    <button type="button" onclick="clicked()">Submit</button>
+    </p>
+    <p>
+    Answer:<input type="text" id="answer" size=50 disabled=true>
     </p>
     </div>
     </body>
