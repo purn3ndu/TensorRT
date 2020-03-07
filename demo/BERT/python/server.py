@@ -68,7 +68,7 @@ def run_server(input_queue, output_queue):
     </p>
 
    <p>
-    Question:<input type="text" id="question" value="Did Mozart and Beethoven meet?" size=50>
+    Question:<input type="text" id="question" value="Who are you?" size=50>
     </p>
     <p>
     <button type="button" onclick="clicked()">Submit</button>
