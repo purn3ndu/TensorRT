@@ -87,6 +87,15 @@ def run_server(input_queue, output_queue):
             input_json = cherrypy.request.json
             input_queue.put((input_json['para'], input_json['question']))
             return output_queue.get()
+
+        @cherrypy.expose
+        @cherrypy.tools.json_out()
+        @cherrypy.tools.json_in()
+        def infer_api(self):
+            input_json = cherrypy.request.json
+            input_queue.put((input_json['context'], input_json['question']))
+            return output_queue.get()
+
     cherrypy.quickstart(HelloWorld())
 
 if __name__ == '__main__':
