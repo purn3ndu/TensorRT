@@ -1,9 +1,99 @@
 from multiprocessing import Process, Queue
+import json
 
 input_queue = Queue()
 output_queue = Queue()
-f = open('plan_doc.txt','r')
+f = open('jarvis_profile.txt','r')
 paragraph_text = f.read()
+
+
+# rules
+replacement_rules = {"what's": "what is", "who's": "who is", "?": ""}
+starting_phrases = ["tell me", "can you", "please"]
+relation_words = ["from"]
+question_words = ["what", "why", "who", "how old", "how long", "how", "do", "does", "where"]
+verb_words = ["is", "are", "do", "does"]
+belonging_word_convertor = {"my": "your", "your": "my", "yours": "my", "you": "i", "i" : "you",
+                            "can you": "i can", "could you": "i could", "have you": "i have"}
+
+
+# Function that extends the precise answer based on the question
+def extend_answer(question, answer):
+    print(question + " (" + answer + ") => ", end = " ")
+
+    # Heuristics for long factual answer, where there is no need to copy question into the answer
+    if len(answer.split()) >= 5:
+        return answer
+
+    # move to lower case
+    question = question.lower()
+
+    # extend shortcuts in the question word and remove question sign
+    for key in replacement_rules:
+        question = question.replace(key, replacement_rules[key])
+
+    # find possible relation word, like "from"
+    relation_word = None
+    for word in relation_words:
+        if question.startswith(word):
+            relation_word = word
+            question = question[len(word) + 1:]
+            break
+
+    # find starting question word
+    question_word = None
+    for word in question_words:
+        if question.startswith(word):
+            question_word = word
+            question = question[len(word)+1:]
+            break
+
+    # Try to find possible relation word like "from" for a second fime in case they are coming after the question
+    if relation_word is None:
+        for word in relation_words:
+            if question.startswith(word):
+                relation_word = word
+                question = question[len(word) + 1:]
+                break
+
+    # in this case you do not add question to the answer
+    if question_word is None:
+        return answer
+
+    # find starting verb word
+    verb_word = None
+    for word in verb_words:
+        if question.startswith(word):
+            if word is not "do" and word is not "does":
+                if word == "are":
+                    verb_word = "am"
+                else:
+                    verb_word = word
+            question = question[len(word) + 1:]
+            break
+
+    # check if a phrase start with a belonging word that should be converted to the opposite one
+    for key in belonging_word_convertor:
+        if question.startswith(key):
+            question = question.replace(key, belonging_word_convertor[key])
+            break
+
+    # create full answer
+    full_answer = question
+
+    if relation_word is not None:
+        full_answer += " " + relation_word
+
+    if verb_word is not None:
+        full_answer += " " + verb_word
+
+    full_answer += " " + answer
+
+    # Capitalize the first letter
+    full_answer = full_answer[0].upper() + full_answer[1:]
+
+    return full_answer
+
 
 def run_server(input_queue, output_queue):
     import cherrypy
@@ -107,4 +197,6 @@ if __name__ == '__main__':
     while True:
         inputs = input_queue.get()
         r = m.inference(inputs[0], inputs[1])
-        output_queue.put(r)
+        print(r)
+        #qa_resp = json.loads(str(r))
+        output_queue.put({'result':extend_answer(inputs[1], r['result']), 'p': r['p']})
