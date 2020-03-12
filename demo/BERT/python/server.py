@@ -149,9 +149,10 @@ def run_server(input_queue, output_queue):
     %s
    </textarea>
    </p>
-   <input type="radio" id="full_sentence_switch" name="gender" value="full">
-    <label for="full">Return full sentence</label><br>
-    <label for="span">Return answer span only</label><br>
+   <p>If you place this string :
+    RETURN_FULL_SENTENCE_CONTAINING_ANSWER_SPAN
+    anywhere in the above passage then you will get the full sentence containing the answer span. <br>
+    If this string is not present (exact match) then the answer extender would work on the answer span and you would get that response.</p>
    <p>
     Example questions:
     </p>
@@ -181,8 +182,16 @@ def run_server(input_queue, output_queue):
         @cherrypy.tools.json_in()
         def infer(self):
             input_json = cherrypy.request.json
-            input_queue.put((input_json['context'], input_json['question']))
-            return output_queue.get()
+            input_question = re.sub(r'[^\x00-\x7F]+', ' ', input_json['question'])
+            input_context = re.sub(r'[^\x00-\x7F]+', ' ', input_json['context'])
+            print("Question received -> ", input_json['question'])
+            input_queue.put((input_context, input_question))
+            r = output_queue.get()
+            # Return the full sentence in which the answer span is present if full sentence flag is on in document.
+            if r['result'] != '' and input_context.find('RETURN_FULL_SENTENCE_CONTAINING_ANSWER_SPAN') != -1:
+                ans_sentences = [sentence + '.' for sentence in input_context.split('.') if r['result'] in sentence]
+                r['result'] = ans_sentences[0].strip()
+            return r
 
         @cherrypy.expose
         @cherrypy.tools.json_out()
