@@ -1,12 +1,15 @@
 from multiprocessing import Process, Queue
 import json
 import re
-from unidecode import unidecode
+import requests
 
 input_queue = Queue()
 output_queue = Queue()
-f = open('jarvis_profile.txt','r')
-paragraph_text = f.read()
+
+jarvis_profile_file = "http://docs.google.com/document/d/17HJL7vrax6FiF1zW_Vzqk9FTfmATeq5i3UemtagM8RY/export?format=txt"
+# f = open('jarvis_profile.txt','r')
+# paragraph_text = f.read()
+jarvis_profile = requests.get(jarvis_profile_file).text
 
 
 # rules
@@ -170,7 +173,7 @@ def run_server(input_queue, output_queue):
     </p>
     </div>
     </body>
-            </html>""" % (paragraph_text,)
+            </html>""" % (jarvis_profile,)
 
         @cherrypy.expose
         @cherrypy.tools.json_out()
@@ -180,10 +183,6 @@ def run_server(input_queue, output_queue):
             input_queue.put((input_json['para'], input_json['question']))
             return output_queue.get()
 
-        from unidecode import unidecode
-        def remove_non_ascii(text):
-            return unidecode(unicode(text, encoding = "utf-8"))
-
         @cherrypy.expose
         @cherrypy.tools.json_out()
         @cherrypy.tools.json_in()
@@ -191,8 +190,6 @@ def run_server(input_queue, output_queue):
             input_json = cherrypy.request.json
             input_question = re.sub(r'[^\x00-\x7F]+',' ', input_json['question'])
             input_context = re.sub(r'[^\x00-\x7F]+',' ', input_json['context'])
-            #input_context = unidecode(str(input_json['context'], encoding = "utf-8"))
-            #input_question = unidecode(str(input_json['question'], encoding = "utf-8"))
             print("Question received -> ", input_json['question'])
             input_queue.put((input_context, input_question))
             return output_queue.get()
