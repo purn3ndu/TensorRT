@@ -7,8 +7,6 @@ input_queue = Queue()
 output_queue = Queue()
 
 jarvis_profile_file = "http://docs.google.com/document/d/17HJL7vrax6FiF1zW_Vzqk9FTfmATeq5i3UemtagM8RY/export?format=txt"
-# f = open('jarvis_profile.txt','r')
-# paragraph_text = f.read()
 jarvis_profile = requests.get(jarvis_profile_file).text
 
 
@@ -130,9 +128,9 @@ def run_server(input_queue, output_queue):
 
       xhttp.open("POST", "infer", true);
       xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-      var para_doc = document.getElementById("para").value;
+      var context_doc = document.getElementById("context").value;
       var question_doc = document.getElementById("question").value;
-      xhttp.send(JSON.stringify({ "para": para_doc, "question": question_doc }));
+      xhttp.send(JSON.stringify({ "context": context_doc, "question": question_doc }));
     }
 
     function selected(){
@@ -147,10 +145,13 @@ def run_server(input_queue, output_queue):
               <div style="width=800 margin:0 auto;" align="center">
 
               <p>
-    <textarea rows="30" cols="100" id="para">
+    <textarea rows="30" cols="100" id="context">
     %s
    </textarea>
    </p>
+   <input type="radio" id="full_sentence_switch" name="gender" value="full">
+    <label for="full">Return full sentence</label><br>
+    <label for="span">Return answer span only</label><br>
    <p>
     Example questions:
     </p>
@@ -180,7 +181,7 @@ def run_server(input_queue, output_queue):
         @cherrypy.tools.json_in()
         def infer(self):
             input_json = cherrypy.request.json
-            input_queue.put((input_json['para'], input_json['question']))
+            input_queue.put((input_json['context'], input_json['question']))
             return output_queue.get()
 
         @cherrypy.expose
@@ -192,7 +193,12 @@ def run_server(input_queue, output_queue):
             input_context = re.sub(r'[^\x00-\x7F]+',' ', input_json['context'])
             print("Question received -> ", input_json['question'])
             input_queue.put((input_context, input_question))
-            return output_queue.get()
+            r = output_queue.get()
+            # Return the full sentence in which the answer span is present if full sentence flag is on in document.
+            if r['result'] != '' and input_context.find('RETURN_FULL_SENTENCE_CONTAINING_ANSWER_SPAN') != -1:
+                ans_sentences = [sentence + '.' for sentence in input_context.split('.') if r['result'] in sentence]
+                r['result'] = ans_sentences[0]
+            return r
 
     cherrypy.quickstart(HelloWorld())
 
@@ -206,5 +212,10 @@ if __name__ == '__main__':
         inputs = input_queue.get()
         r = m.inference(inputs[0], inputs[1])
         print(r)
-        #qa_resp = json.loads(str(r))
-        output_queue.put({'result':extend_answer(inputs[1], r['result']), 'p': r['p']})
+        # If result contains answer span and full sentence flag is not present then use answer extender
+        # If full sentence flag is present then don't use answer extender as full sentence containing answer span
+        # will be returned
+        if r['result'] != '' and inputs[0].find('RETURN_FULL_SENTENCE_CONTAINING_ANSWER_SPAN') == -1:
+            output_queue.put({'result':extend_answer(inputs[1], r['result']), 'p': r['p']})
+        else:
+            output_queue.put(r)
