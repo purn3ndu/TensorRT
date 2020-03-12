@@ -1,5 +1,7 @@
 from multiprocessing import Process, Queue
 import json
+import re
+from unidecode import unidecode
 
 input_queue = Queue()
 output_queue = Queue()
@@ -98,7 +100,7 @@ def extend_answer(question, answer):
 def run_server(input_queue, output_queue):
     import cherrypy
 
-    cherrypy.config.update({'server.socket_port': 8880,
+    cherrypy.config.update({'server.socket_port': 5000,
 #        'environment': 'production',
         'engine.autoreload.on': False,
 #        'server.thread_pool':  1,
@@ -178,12 +180,21 @@ def run_server(input_queue, output_queue):
             input_queue.put((input_json['para'], input_json['question']))
             return output_queue.get()
 
+        from unidecode import unidecode
+        def remove_non_ascii(text):
+            return unidecode(unicode(text, encoding = "utf-8"))
+
         @cherrypy.expose
         @cherrypy.tools.json_out()
         @cherrypy.tools.json_in()
         def infer_api(self):
             input_json = cherrypy.request.json
-            input_queue.put((input_json['context'], input_json['question']))
+            input_question = re.sub(r'[^\x00-\x7F]+',' ', input_json['question'])
+            input_context = re.sub(r'[^\x00-\x7F]+',' ', input_json['context'])
+            #input_context = unidecode(str(input_json['context'], encoding = "utf-8"))
+            #input_question = unidecode(str(input_json['question'], encoding = "utf-8"))
+            print("Question received -> ", input_json['question'])
+            input_queue.put((input_context, input_question))
             return output_queue.get()
 
     cherrypy.quickstart(HelloWorld())
