@@ -205,7 +205,9 @@ def run_server(input_queue, output_queue):
             r = output_queue.get()
             # Return the full sentence in which the answer span is present if full sentence flag is on in document.
             if r['result'] != '' and input_context.find('RETURN_FULL_SENTENCE_CONTAINING_ANSWER_SPAN') != -1:
-                ans_sentences = [sentence + '.' for sentence in input_context.split('.') if r['result'] in sentence]
+                print("The ans span found is: ",r['result'])
+                ans_sentences = [sentence + '.' for sentence in input_context.split('. ') if r['result'] in sentence] #TODO: Fix sentence split hack
+                print("Candidate answer sentences are: ",ans_sentences)
                 r['result'] = ans_sentences[0].strip()
             return r
 
